@@ -18,6 +18,13 @@ services:
     volumes:
       - minio_data:/data
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
   ingestion-service:
     build: ./ingestion-service
     ports:
@@ -28,9 +35,28 @@ services:
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       - qdrant
       - minio
+      - redis
+
+  ingestion-worker:
+    build: ./ingestion-service
+    command: ["python", "-m", "app.worker"]
+    environment:
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - qdrant
+      - minio
+      - redis
 
   query-service:
     build: ./query-service
@@ -41,9 +67,13 @@ services:
       QDRANT_PORT: 6333
       GROQ_API_KEY: ${GROQ_API_KEY}
       GROQ_MODEL: llama-3.3-70b-versatile
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       - qdrant
+      - redis
 
 volumes:
   qdrant_data:
   minio_data:
+  redis_data:

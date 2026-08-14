@@ -26,3 +26,12 @@ def save_file(object_name: str, content: bytes, content_type: str) -> None:
         length=len(content),
         content_type=content_type,
     )
+
+
+def get_file(object_name: str) -> bytes:
+    response = _client.get_object(settings.minio_bucket, object_name)
+    try:
+        return response.read()
+    finally:
+        response.close()
+        response.release_conn()

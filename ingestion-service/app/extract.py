@@ -3,6 +3,12 @@ import io
 import fitz  # PyMuPDF
 from docx import Document
 
+_SUPPORTED_SUFFIXES = (".pdf", ".docx", ".txt", ".md")
+
+
+def is_supported(filename: str) -> bool:
+    return filename.lower().endswith(_SUPPORTED_SUFFIXES)
+
 
 def extract_text(filename: str, content: bytes) -> str:
     lower = filename.lower()
