@@ -1,0 +1,11 @@
+INCIDENT RUNBOOK: Payments Service 503 Errors
+
+When the payments-service returns HTTP 503, first check the connection pool saturation on the payments-db read replica. This is the most common cause (seen in 80% of past incidents).
+
+Steps:
+1. Check Grafana dashboard "payments-db-pool" for active connections vs max.
+2. If pool is saturated, scale the read replica horizontally via the infra console.
+3. If pool is healthy, check payments-service pod CPU throttling in Kubernetes.
+4. Escalate to #payments-oncall if not resolved in 15 minutes.
+
+Root cause in Q2 2026 incident: a missing index on the transactions table caused slow queries that saturated the pool.
