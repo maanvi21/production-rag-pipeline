@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     chunk_size: int = 800
     chunk_overlap: int = 150
 
+    # When true, ingestion-service runs the stream-consumer loop in a
+    # background thread instead of relying on a separate ingestion-worker
+    # process/service. Used on deploy targets where a second long-running
+    # service isn't free (e.g. Render's Background Workers have no free tier).
+    run_worker_inline: bool = False
+
     class Config:
         env_file = ".env"
 
