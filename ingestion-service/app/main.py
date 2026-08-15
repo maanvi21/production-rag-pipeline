@@ -1,12 +1,20 @@
 import uuid
 
 from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.extract import is_supported
 from app.queue import enqueue_job, get_status, set_status
 from app.storage import save_file
 
 app = FastAPI(title="Ingestion Service")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")

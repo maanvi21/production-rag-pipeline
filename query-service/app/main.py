@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from openai import APIError
 from pydantic import BaseModel
 
 from app.cache import get_cached, set_cached
@@ -6,6 +8,13 @@ from app.llm import generate_answer
 from app.retrieval import retrieve
 
 app = FastAPI(title="Query Service")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class QueryRequest(BaseModel):
@@ -37,7 +46,11 @@ def query(request: QueryRequest):
         return QueryResponse(**cached, cached=True)
 
     chunks = retrieve(request.question)
-    answer = generate_answer(request.question, chunks)
+    try:
+        answer = generate_answer(request.question, chunks)
+    except APIError as e:
+        raise HTTPException(status_code=502, detail=f"LLM request failed: {e.message}")
+
     sources = [
         Source(
             filename=c.filename,
