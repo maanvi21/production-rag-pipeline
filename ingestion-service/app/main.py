@@ -1,13 +1,29 @@
+import threading
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import settings
 from app.extract import is_supported
 from app.queue import enqueue_job, get_status, set_status
 from app.storage import save_file
 
-app = FastAPI(title="Ingestion Service")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print(f"[lifespan] run_worker_inline={settings.run_worker_inline!r}", flush=True)
+    if settings.run_worker_inline:
+        from app.worker import run as run_worker
+
+        t = threading.Thread(target=run_worker, daemon=True)
+        t.start()
+        print(f"[lifespan] worker thread started, alive={t.is_alive()}", flush=True)
+    yield
+
+
+app = FastAPI(title="Ingestion Service", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
