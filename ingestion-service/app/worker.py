@@ -8,7 +8,11 @@ from app.queue import GROUP, STREAM, ensure_group, set_status
 from app.storage import get_file
 from app.vector_store import upsert_chunks
 
-_client = redis.Redis(host=settings.redis_host, port=settings.redis_port, decode_responses=True)
+_client = (
+    redis.from_url(settings.redis_url, decode_responses=True)
+    if settings.redis_url
+    else redis.Redis(host=settings.redis_host, port=settings.redis_port, decode_responses=True)
+)
 
 CONSUMER_NAME = "ingestion-worker"
 

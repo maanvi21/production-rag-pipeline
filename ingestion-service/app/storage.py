@@ -1,37 +1,27 @@
-from io import BytesIO
+import base64
 
-from minio import Minio
+import redis
 
 from app.config import settings
 
-_client = Minio(
-    settings.minio_endpoint,
-    access_key=settings.minio_access_key,
-    secret_key=settings.minio_secret_key,
-    secure=False,
+_client = (
+    redis.from_url(settings.redis_url, decode_responses=True)
+    if settings.redis_url
+    else redis.Redis(host=settings.redis_host, port=settings.redis_port, decode_responses=True)
 )
 
+# Raw file bytes only need to survive the handoff from the upload request to
+# whenever the worker picks the job up — not long-term storage. Reusing Redis
+# (already required for the job queue) avoids a third piece of infra.
+FILE_TTL_SECONDS = 3600
 
-def ensure_bucket() -> None:
-    if not _client.bucket_exists(settings.minio_bucket):
-        _client.make_bucket(settings.minio_bucket)
 
-
-def save_file(object_name: str, content: bytes, content_type: str) -> None:
-    ensure_bucket()
-    _client.put_object(
-        settings.minio_bucket,
-        object_name,
-        data=BytesIO(content),
-        length=len(content),
-        content_type=content_type,
-    )
+def save_file(object_name: str, content: bytes) -> None:
+    _client.setex(f"file:{object_name}", FILE_TTL_SECONDS, base64.b64encode(content))
 
 
 def get_file(object_name: str) -> bytes:
-    response = _client.get_object(settings.minio_bucket, object_name)
-    try:
-        return response.read()
-    finally:
-        response.close()
-        response.release_conn()
+    raw = _client.get(f"file:{object_name}")
+    if raw is None:
+        raise FileNotFoundError(f"{object_name} not found (may have expired)")
+    return base64.b64decode(raw)

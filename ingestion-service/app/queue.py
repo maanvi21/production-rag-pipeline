@@ -2,7 +2,11 @@ import redis
 
 from app.config import settings
 
-_client = redis.Redis(host=settings.redis_host, port=settings.redis_port, decode_responses=True)
+_client = (
+    redis.from_url(settings.redis_url, decode_responses=True)
+    if settings.redis_url
+    else redis.Redis(host=settings.redis_host, port=settings.redis_port, decode_responses=True)
+)
 
 STREAM = settings.stream_name
 GROUP = settings.consumer_group

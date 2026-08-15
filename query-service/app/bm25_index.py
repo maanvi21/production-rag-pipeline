@@ -1,12 +1,12 @@
 import time
 from dataclasses import dataclass
 
-from qdrant_client import QdrantClient
 from rank_bm25 import BM25Okapi
 
+from app.clients import get_qdrant_client
 from app.config import settings
 
-_client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+_client = get_qdrant_client()
 
 _cache: dict = {"chunks": None, "bm25": None, "loaded_at": 0.0}
 

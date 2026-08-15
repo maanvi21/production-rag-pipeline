@@ -5,7 +5,11 @@ from qdrant_client.models import Distance, PointStruct, VectorParams
 
 from app.config import settings
 
-_client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+_client = (
+    QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
+    if settings.qdrant_url
+    else QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+)
 
 
 def ensure_collection() -> None:

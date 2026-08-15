@@ -32,7 +32,7 @@ async def upload(file: UploadFile):
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.filename}")
 
     document_id = str(uuid.uuid4())
-    save_file(f"{document_id}/{file.filename}", content, file.content_type or "application/octet-stream")
+    save_file(f"{document_id}/{file.filename}", content)
 
     set_status(document_id, "queued", filename=file.filename)
     enqueue_job(document_id, file.filename, file.content_type or "application/octet-stream")

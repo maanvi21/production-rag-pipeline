@@ -6,18 +6,6 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
-  minio:
-    image: minio/minio:RELEASE.2024-09-13T20-26-02Z
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio_data:/data
-
   redis:
     image: redis:7-alpine
     ports:
@@ -32,14 +20,10 @@ services:
     environment:
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6333
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
       - qdrant
-      - minio
       - redis
 
   ingestion-worker:
@@ -48,14 +32,10 @@ services:
     environment:
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6333
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
       - qdrant
-      - minio
       - redis
 
   query-service:
@@ -75,5 +55,4 @@ services:
 
 volumes:
   qdrant_data:
-  minio_data:
   redis_data:

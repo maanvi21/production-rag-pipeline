@@ -1,13 +1,12 @@
 from dataclasses import dataclass
 
-from qdrant_client import QdrantClient
-
 from app.bm25_index import IndexedChunk, bm25_search
+from app.clients import get_qdrant_client
 from app.config import settings
 from app.embeddings import embed_query
 from app.rerank import rerank
 
-_client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+_client = get_qdrant_client()
 
 
 @dataclass

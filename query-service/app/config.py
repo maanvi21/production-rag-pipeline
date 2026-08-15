@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     qdrant_host: str = "qdrant"
     qdrant_port: int = 6333
+    qdrant_url: str | None = None
+    qdrant_api_key: str | None = None
     qdrant_collection: str = "documents"
 
     embedding_model: str = "all-MiniLM-L6-v2"
@@ -15,6 +17,7 @@ class Settings(BaseSettings):
 
     redis_host: str = "redis"
     redis_port: int = 6379
+    redis_url: str | None = None
     cache_ttl_seconds: int = 3600
 
     top_k: int = 5
