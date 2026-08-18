@@ -11,36 +11,34 @@ system design learning log.
 ## Phase 1 — service separation + persistent vector store
 
 ```
-client -> ingestion-service -> [Qdrant (vectors)]
+client -> ingestion-service -> [MinIO (raw files), Qdrant (vectors)]
 client -> query-service      -> [Qdrant (search), Groq (generation)]
 ```
 
 - **ingestion-service** (`:8001`) — `POST /upload`: extracts text (PDF/DOCX/TXT/MD),
-  chunks it, embeds locally with `sentence-transformers`, and upserts the vectors
-  into Qdrant. Raw file bytes aren't kept past processing — nothing downstream needs
-  to re-read the original file once it's chunked and embedded.
+  chunks it, embeds locally with `sentence-transformers`, stores the raw file in MinIO
+  and the vectors in Qdrant.
 - **query-service** (`:8002`) — `POST /query`: embeds the question, retrieves top-k
   chunks from Qdrant, asks the LLM to answer using only that context, returns the
   answer plus which source chunks were used.
 
-Why split into two services, why Qdrant over in-memory FAISS, why local embeddings
-but a hosted LLM for generation — all covered in the architecture discussion this
-project started from; short version: independent scaling, durability across
-restarts, decoupled compute/storage, and cost control.
+Why split into two services, why Qdrant over in-memory FAISS, why MinIO for raw
+files, why local embeddings but a hosted LLM for generation — all covered in the
+architecture discussion this project started from; short version: independent
+scaling, durability across restarts, decoupled compute/storage, and cost control.
 
 ## Phase 2 — async ingestion
 
 ```
-client -> ingestion-service -> Redis (raw file, short TTL) + Redis Stream (job)
+client -> ingestion-service -> MinIO (raw file) + Redis Stream (job)
                                       |
                                       v
                               ingestion-worker -> Qdrant (vectors)
 ```
 
 `POST /upload` no longer blocks on extraction/chunking/embedding. It now only
-validates the file type, stashes the raw file bytes in Redis (just long enough
-for the worker to pick the job up — not durable storage), pushes a job onto a
-Redis Stream (`ingestion_jobs`), and returns immediately with a `document_id` and
+validates the file type, saves the raw file to MinIO, pushes a job onto a Redis
+Stream (`ingestion_jobs`), and returns immediately with a `document_id` and
 `status: "queued"`. A separate **ingestion-worker** process consumes that stream
 via a consumer group, does the actual extract -> chunk -> embed -> upsert work,
 and records progress in Redis so it can be polled:
@@ -107,6 +105,7 @@ curl -X POST http://localhost:8002/query \
 ```
 
 Qdrant dashboard: http://localhost:6333/dashboard
+MinIO console: http://localhost:9001 (minioadmin / minioadmin)
 
 ## Roadmap (each phase = one LinkedIn post)
 
