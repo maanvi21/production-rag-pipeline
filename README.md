@@ -4,7 +4,8 @@ A RAG system for internal engineering knowledge (runbooks, postmortems, architec
 built as a series of system-design upgrades on top of a basic RAG pipeline — not a
 single-file chatbot, but a set of services that could plausibly run in production.
 
-Why this exists instead of "just use ChatGPT": see the architecture rationale below.
+Why this exists instead of "just use ChatGPT": see the architecture rationale below,
+or [ARCHITECTURE.md](ARCHITECTURE.md) for the full walkthrough and design diagram.
 Each phase adds one system design concept on purpose, so the build doubles as a
 system design learning log.
 
@@ -23,8 +24,8 @@ client -> query-service      -> [Qdrant (search), Groq (generation)]
   answer plus which source chunks were used.
 
 Why split into two services, why Qdrant over in-memory FAISS, why MinIO for raw
-files, why local embeddings but a hosted LLM for generation — all covered in the
-architecture discussion this project started from; short version: independent
+files, why local embeddings but a hosted LLM for generation — all covered in
+[ARCHITECTURE.md](ARCHITECTURE.md); short version: independent
 scaling, durability across restarts, decoupled compute/storage, and cost control.
 
 ## Phase 2 — async ingestion
